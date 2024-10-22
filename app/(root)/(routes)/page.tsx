@@ -3,7 +3,7 @@
 import { useStoreModal } from "@/hooks/use-store-modal";
 import { useEffect } from "react";
 
-export const  Home = () => {
+const HomePage: React.FC = () => {
 
   const onOpen = useStoreModal((state) => state.onOpen);
   const isOpen = useStoreModal((state) => state.isOpen);
@@ -14,7 +14,9 @@ export const  Home = () => {
     }
   }, [isOpen, onOpen])
 
-  return null;
+  return (
+    <div className=""></div>
+  );
 }
 
-export default Home;
+export default HomePage;

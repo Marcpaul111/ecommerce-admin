@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import React from 'react'
-import { SignUp } from '@clerk/nextjs'
+import React from 'react';
+import { SignUp } from '@clerk/nextjs';
 
-export const SignUpPage = () => {
+const SignUpPage: React.FC = () => {
   return (
     <div className='min-h-screen flex justify-center items-center'>
-        <SignUp />
+      <SignUp />
     </div>
-  )
-}
+  );
+};
 
-export default SignUpPage
+export default SignUpPage;
