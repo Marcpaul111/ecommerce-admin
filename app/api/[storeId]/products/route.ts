@@ -119,6 +119,7 @@ export async function GET(
     const colorId = searchParams.get("colorId") || undefined;
     const sizeId = searchParams.get("sizeId") || undefined;
     const isFeatured = searchParams.get("isFeatured") || undefined;
+    const isNew = searchParams.get("isNew") || undefined;
     const description = searchParams.get("description") || undefined;
     
     if (!params.storeId) {
@@ -133,6 +134,7 @@ export async function GET(
         sizeId,
         description,
         isFeatured: isFeatured ? true : undefined,
+        isNew: isNew ? true : undefined,
         isArchived: false
       },
       include:{
