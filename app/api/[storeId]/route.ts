@@ -124,3 +124,41 @@ export async function DELETE(
     })
   }
 }
+
+// Get
+// Get
+export async function GET(
+  req: Request,
+  {
+    params,
+  }: {
+    params: { storeId: string };
+  }
+) {
+  try {
+    
+    if (!params.storeId) {
+        return new NextResponse("Store Id is required.");
+      }
+
+    const store = await prismadb.storeImage.findMany({
+      where: {
+        storeId: params.storeId,
+      },
+    });
+
+    return NextResponse.json(store);
+  } catch (error) {
+    console.error("[STORE_GET] Detailed error:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    return new NextResponse(
+      `Internal Error: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      { status: 500 }
+    );
+  }
+}
