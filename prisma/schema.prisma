@@ -14,20 +14,37 @@ datasource db {
   relationMode = "prisma"
 }
 
-//creating store
 model Store {
   id        String     @id @default(uuid())
   name      String
-  userId    String
+  userId    String   
+  logoUrl   String?    // New field
+  twitterUrl String?
+  facebookUrl String?
+  instagramUrl  String?
+  images    StoreImage[] // New relation
   banners   Banners[]  @relation("StoreToBanner")
   category  Category[] @relation("StoreToCategory")
   sizes     Sizes[]    @relation("StoreToSize")
   colors    Colors[]   @relation("StoreToColor")
   products  Products[] @relation("StoreToProduct")
-  orders    Orders[]    @relation("StoreToOrder")
+  orders    Orders[]   @relation("StoreToOrder")
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
+
+// New model for store images
+model StoreImage {
+  id        String   @id @default(uuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storeId])
+}
+
 
 //creating store banners
 model Banners {
@@ -93,6 +110,7 @@ model Products {
   name       String
   description String  @default("")
   price      Decimal
+  isNew         Boolean @default(false)
   isFeatured Boolean  @default(false)
   isArchived Boolean  @default(false)
   sizeId     String

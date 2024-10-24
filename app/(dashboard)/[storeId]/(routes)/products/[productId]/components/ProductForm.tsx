@@ -47,6 +47,7 @@ const formSchema = z.object({
   sizeId: z.string().min(1),
   description: z.string().min(1, "Description is required"),
   isFeatured: z.boolean().default(false).optional(),
+  isNew: z.boolean().default(false).optional(),
   isArchived: z.boolean().default(false).optional(),
 });
 
@@ -104,6 +105,7 @@ export default function ProductForm({
           categoryId: "",
           colorId: "",
           sizeId: "",
+          isNew: false,
           description: "",
           isFeatured: false,
           isArchived: false,
@@ -199,7 +201,7 @@ export default function ProductForm({
           
 
           {/* product name */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-20">
             <FormField
               control={form.control}
               name="name"
@@ -401,6 +403,32 @@ export default function ProductForm({
                     <FormLabel>Feature</FormLabel>
                     <FormDescription>
                       This product will appear on the homepage.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+           
+            {/* new */}
+            <FormField
+              control={form.control}
+              name="isNew"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 border rounded md p-4">
+                  <FormControl>
+                    {/* <Checkbox 
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                     /> */}
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-2 leading-none">
+                    <FormLabel>New</FormLabel>
+                    <FormDescription>
+                      This product will appear on the homepage(New products section).
                     </FormDescription>
                   </div>
                 </FormItem>

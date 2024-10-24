@@ -2,11 +2,13 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import CellAction from "./CellAction";
+import Image from "next/image";
 
 
 export type ProductColumn = {
   id: string;
   name: string;
+  imageUrl: string;
   isFeatured: boolean;
   isArchived: boolean;
   price: string;
@@ -18,6 +20,15 @@ export type ProductColumn = {
 
 export const columns: ColumnDef<ProductColumn>[] = [
  
+  {
+    accessorKey: "image",
+    header: "Image",
+    cell: ({row}) => (
+      <div className="flex items-center gap-x-2">
+       <Image src={row.original.imageUrl} alt="image" height={50} width={50}/>
+      </div>
+    )
+  },
   {
     accessorKey: "name",
     header: "Name",

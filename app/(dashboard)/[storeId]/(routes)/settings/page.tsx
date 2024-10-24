@@ -25,6 +25,9 @@ const SettingsPage: React.FC<SettingsPageProps> = async ({ params }) => {
       id: params.storeId,
       userId,
     },
+    include: {
+      images: true
+    }
   });
 
   if (!store) {

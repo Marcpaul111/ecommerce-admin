@@ -1,7 +1,4 @@
-"use client";
-
-import { convertBlobUrlToFile } from "@/lib/utils";
-import { ChangeEvent, useEffect, useRef, useState, useTransition, useCallback } from "react";
+import { ChangeEvent, useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { uploadImage } from "@/utils/storage/client";
@@ -18,83 +15,134 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   disabled,
   onChange,
   onRemove,
-  value
+  value,
 }) => {
   const [isPending, startTransition] = useTransition();
-  const [imageUrls, setImageUrls] = useState<{ preview: string; uploaded: string | null; isLoading: boolean }[]>([]);
+  const [localImages, setLocalImages] = useState<
+    Array<{
+      id: string;
+      preview: string;
+      uploaded: string | null;
+      isLoading: boolean;
+    }>
+  >([]);
   const inputImageRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setImageUrls(value.map(url => ({ preview: url, uploaded: url, isLoading: false })));
+    setLocalImages(
+      value.map((url, index) => ({
+        id: `${url}-${index}`,
+        preview: url,
+        uploaded: url,
+        isLoading: false,
+      }))
+    );
   }, [value]);
 
-  const handleImageChange = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newImages = Array.from(e.target.files).map((file) => ({
-        preview: URL.createObjectURL(file),
-        uploaded: null,
-        isLoading: true,
-      }));
-      setImageUrls((prev) => [...prev, ...newImages]);
-      await handleUploadImages(newImages);
-    }
-  }, []);
+  const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
 
-  const handleUploadImages = useCallback(async (images: { preview: string; uploaded: string | null; isLoading: boolean }[]) => {
+    const files = Array.from(e.target.files);
+    const newImages = files.map((file, index) => ({
+      id: `new-${Date.now()}-${index}`,
+      preview: URL.createObjectURL(file),
+      uploaded: null,
+      isLoading: true,
+    }));
+
+    setLocalImages((prev) => [...prev, ...newImages]);
+
     startTransition(async () => {
       const uploadedImages = await Promise.all(
-        images.map(async ({ preview }) => {
-          const imageFile = await convertBlobUrlToFile(preview);
-          const { imageUrl, error } = await uploadImage({ file: imageFile, bucket: "ecommerce" });
-
-          if (error) {
-            console.error(error);
-            return { preview, uploaded: null, isLoading: false };
+        files.map(async (file, index) => {
+          try {
+            const { imageUrl } = await uploadImage({
+              file,
+              bucket: "ecommerce",
+            });
+            return {
+              id: newImages[index].id,
+              uploaded: imageUrl,
+            };
+          } catch (error) {
+            console.error("Upload error:", error);
+            return {
+              id: newImages[index].id,
+              uploaded: null,
+            };
           }
-          return { preview, uploaded: imageUrl, isLoading: false };
         })
       );
 
-      setImageUrls((prev) => {
-        const updatedUrls = prev.map((image) =>
-          uploadedImages.find((uploaded) => uploaded.preview === image.preview) || image
-        );
-        const uploadedUrls = updatedUrls.map(({ uploaded }) => uploaded).filter(Boolean) as string[];
-        onChange(uploadedUrls);
-        return updatedUrls;
+      setLocalImages((prev) => {
+        const updated = prev.map((img) => {
+          const uploadResult = uploadedImages.find((u) => u.id === img.id);
+          if (uploadResult) {
+            return {
+              ...img,
+              uploaded: uploadResult.uploaded,
+              isLoading: false,
+            };
+          }
+          return img;
+        });
+
+        const validUrls = updated
+          .filter((img) => img.uploaded)
+          .map((img) => img.uploaded!);
+
+        onChange(validUrls);
+
+        return updated;
       });
     });
-  }, [onChange]);
 
-  const handleRemove = useCallback((urlToRemove: string) => {
-    setImageUrls((prevUrls) => {
-      const updatedUrls = prevUrls.filter((url) => url.preview !== urlToRemove);
-      const uploadedUrls = updatedUrls.map(({ uploaded }) => uploaded).filter(Boolean) as string[];
-      onChange(uploadedUrls);
-      return updatedUrls;
+    if (inputImageRef.current) {
+      inputImageRef.current.value = "";
+    }
+  };
+
+  const handleRemove = (imageId: string) => {
+    const imageToRemove = localImages.find((img) => img.id === imageId);
+    if (!imageToRemove) return;
+
+    setLocalImages((prev) => {
+      const filtered = prev.filter((img) => img.id !== imageId);
+      const validUrls = filtered
+        .filter((img) => img.uploaded)
+        .map((img) => img.uploaded!);
+
+      onChange(validUrls);
+
+      if (imageToRemove.uploaded) {
+        onRemove(imageToRemove.uploaded);
+      }
+
+      return filtered;
     });
-    onRemove(urlToRemove);
-  }, [onChange, onRemove]);
+  };
 
   return (
     <div className="py-5">
       <input
         type="file"
         ref={inputImageRef}
-        multiple
         hidden
         onChange={handleImageChange}
         disabled={disabled || isPending}
+        accept="image/*"
+        multiple
       />
       <div className="flex gap-4 flex-wrap">
-        {imageUrls.map(({ preview, uploaded, isLoading }, index) => (
-          <div key={preview} className="relative rounded-md">
+        {localImages.map(({ id, preview, uploaded, isLoading }) => (
+          <div key={id} className="relative rounded-md">
             <Button
               className="absolute top-2 right-2 z-10"
               variant="destructive"
               size="icon"
-              onClick={() => handleRemove(preview)}
+              onClick={() => handleRemove(id)}
               disabled={isLoading}
+              type="button"
             >
               <Trash className="h-4 w-4" />
             </Button>
@@ -103,22 +151,24 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                 <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
               </div>
             ) : (
-              <Image 
-                src={uploaded || preview} 
-                alt={`Uploaded image ${index + 1}`} 
-                width={200} 
-                height={200} 
+              <Image
+                src={uploaded || preview}
+                alt="Uploaded image"
+                width={200}
+                height={200}
                 className="object-cover h-[200px] w-[200px] rounded-md"
               />
             )}
           </div>
         ))}
       </div>
-      {imageUrls.length === 0 && (
+      {(localImages.length === 0 || value.length > 1) && (
         <Button
+          type="button"
           variant="outline"
           onClick={() => inputImageRef.current?.click()}
           disabled={disabled || isPending}
+          className="mt-4"
         >
           <Images className="h-6 w-6 mr-2" />
           Upload Image

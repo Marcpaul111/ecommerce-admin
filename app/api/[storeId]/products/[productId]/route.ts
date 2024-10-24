@@ -66,6 +66,7 @@ export async function PATCH(
       categoryId,
       images,
       isFeatured,
+      isNew,
       isArchived,
       description
     } = body;
@@ -130,6 +131,7 @@ export async function PATCH(
         description,
         categoryId,
         isFeatured,
+        isNew,
         isArchived,
         images: {
           deleteMany: {},
