@@ -145,6 +145,9 @@ export async function GET(
       where: {
         storeId: params.storeId,
       },
+      include:{
+        store: true
+      }
     });
 
     return NextResponse.json(store);
