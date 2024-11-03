@@ -1,4 +1,5 @@
 import prismadb from "@/lib/prismadb";
+import corsMiddleware from "@/utils/cors";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
@@ -105,63 +106,60 @@ export async function POST(
 
 GET
 export async function GET(
-  req: Request,
-  {
-    params,
-  }: {
-    params: { storeId: string };
-  }
+  request: Request,
+  { params }: { params: { storeId: string } }
 ) {
-  try {
-
-    const {searchParams} = new URL(req.url)
-    const categoryId = searchParams.get("categoryId") || undefined;
-    const colorId = searchParams.get("colorId") || undefined;
-    const sizeId = searchParams.get("sizeId") || undefined;
-    const isFeatured = searchParams.get("isFeatured") || undefined;
-    const isNew = searchParams.get("isNew") || undefined;
-    const description = searchParams.get("description") || undefined;
-    
-    if (!params.storeId) {
-        return new NextResponse("Store Id is required.");
+  return corsMiddleware(request, async (req: Request) => {
+    try {
+      const { searchParams } = new URL(req.url);
+      const categoryId = searchParams.get("categoryId") || undefined;
+      const colorId = searchParams.get("colorId") || undefined;
+      const sizeId = searchParams.get("sizeId") || undefined;
+      const isFeatured = searchParams.get("isFeatured") || undefined;
+      const isNew = searchParams.get("isNew") || undefined;
+      const description = searchParams.get("description") || undefined;
+      
+      if (!params.storeId) {
+        return new NextResponse("Store Id is required.", { status: 400 });
       }
 
-    const products = await prismadb.products.findMany({
-      where: {
-        storeId: params.storeId,
-        categoryId,
-        colorId,
-        sizeId,
-        description,
-        isFeatured: isFeatured ? true : undefined,
-        isNew: isNew ? true : undefined,
-        isArchived: false
-      },
-      include:{
-        images: true,
-        category: true,
-        size:true,
-        color:true
-      },
-      orderBy:{
-        createdAt: 'desc'
-      }
-    });
+      const products = await prismadb.products.findMany({
+        where: {
+          storeId: params.storeId,
+          categoryId,
+          colorId,
+          sizeId,
+          description,
+          isFeatured: isFeatured ? true : undefined,
+          isNew: isNew ? true : undefined,
+          isArchived: false
+        },
+        include:{
+          images: true,
+          category: true,
+          size:true,
+          color:true
+        },
+        orderBy:{
+          createdAt: 'desc'
+        }
+      });
 
-    return NextResponse.json(products);
-  } catch (error) {
-    console.error("[PRODUCTS_GET] Detailed error:", error);
-    if (error instanceof Error) {
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
+      return NextResponse.json(products);
+    } catch (error) {
+      console.error("[PRODUCTS_GET] Detailed error:", error);
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      return new NextResponse(
+        `Internal Error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        { status: 500 }
+      );
     }
-    return new NextResponse(
-      `Internal Error: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-      { status: 500 }
-    );
-  }
+  });
 }
 
 // DELETE
