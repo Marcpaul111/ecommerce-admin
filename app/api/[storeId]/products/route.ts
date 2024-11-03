@@ -1,5 +1,5 @@
 import prismadb from "@/lib/prismadb";
-import corsMiddleware from "@/utils/cors";
+// import corsMiddleware from "@/utils/cors";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
@@ -102,47 +102,45 @@ export async function GET(
   req: Request,
   { params }: { params: { storeId: string } }
 ) {
-  return corsMiddleware(req, async (request: Request) => {
-    try {
-      const { searchParams } = new URL(request.url);
-      
-      const categoryId = searchParams.get("categoryId") || undefined;
-      const colorId = searchParams.get("colorId") || undefined;
-      const sizeId = searchParams.get("sizeId") || undefined;
-      const isFeatured = searchParams.get("isFeatured");
-      const isNew = searchParams.get("isNew");
-      
-      if (!params.storeId) {
-        return new NextResponse("Store ID is required", { status: 400 });
-      }
-
-      const products = await prismadb.products.findMany({
-        where: {
-          storeId: params.storeId,
-          categoryId,
-          colorId,
-          sizeId,
-          isFeatured: isFeatured === "true" ? true : undefined,
-          isNew: isNew === "true" ? true : undefined,
-          isArchived: false,
-        },
-        include: {
-          images: true,
-          category: true,
-          size: true,
-          color: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-
-      return NextResponse.json(products);
-    } catch (error) {
-      console.error("[PRODUCTS_GET]", error);
-      return new NextResponse("Internal Server Error", { status: 500 });
+  try {
+    const { searchParams } = new URL(req.url);
+    
+    const categoryId = searchParams.get("categoryId") || undefined;
+    const colorId = searchParams.get("colorId") || undefined;
+    const sizeId = searchParams.get("sizeId") || undefined;
+    const isFeatured = searchParams.get("isFeatured");
+    const isNew = searchParams.get("isNew");
+    
+    if (!params.storeId) {
+      return new NextResponse("Store ID is required", { status: 400 });
     }
-  });
+
+    const products = await prismadb.products.findMany({
+      where: {
+        storeId: params.storeId,
+        categoryId,
+        colorId,
+        sizeId,
+        isFeatured: isFeatured === "true" ? true : undefined,
+        isNew: isNew === "true" ? true : undefined,
+        isArchived: false,
+      },
+      include: {
+        images: true,
+        category: true,
+        size: true,
+        color: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return NextResponse.json(products);
+  } catch (error) {
+    console.error("[PRODUCTS_GET]", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
 }
 
 export async function DELETE(
