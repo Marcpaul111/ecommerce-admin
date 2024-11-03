@@ -98,13 +98,14 @@ export async function POST(
   }
 }
 
+// get
 export async function GET(
   req: Request,
   { params }: { params: { storeId: string } }
 ) {
   try {
     const { searchParams } = new URL(req.url);
-    
+    const name = searchParams.get("name") || undefined;
     const categoryId = searchParams.get("categoryId") || undefined;
     const colorId = searchParams.get("colorId") || undefined;
     const sizeId = searchParams.get("sizeId") || undefined;
@@ -118,6 +119,9 @@ export async function GET(
     const products = await prismadb.products.findMany({
       where: {
         storeId: params.storeId,
+        name: name ? {
+          contains: name
+        } : undefined,
         categoryId,
         colorId,
         sizeId,
