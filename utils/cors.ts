@@ -1,32 +1,19 @@
-import { NextResponse } from 'next/server';
-import Cors from 'cors';
+import { NextResponse, type NextRequest } from "next/server";
 
-const cors = Cors({
-  methods: ['GET', 'POST', 'DELETE', 'HEAD'],
-  origin: '*', // Configure this based on your needs
-  credentials: true,
-});
 
-function runMiddleware(req: Request, fn: Function) {
-  return new Promise((resolve, reject) => {
-    fn(req, (result: any) => {
-      if (result instanceof Error) {
-        return reject(result);
-      }
-      return resolve(result);
-    });
-  });
+export function middleware(req: NextRequest) {
+  console.log(req.nextUrl);
+
+  const response = NextResponse.next();
+  
+  response.headers.append("ALLOW-ACCESS-CONTROL-ORIGIN", '*')
+  response.headers.append("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  response.headers.append("Access-Control-Allow-Headers", "Content-Type");
+  return response;
+
+  
 }
 
-export default async function corsMiddleware(
-  request: Request,
-  handler: (request: Request) => Promise<NextResponse>
-): Promise<NextResponse> {
-  try {
-    await runMiddleware(request, cors);
-    return await handler(request);
-  } catch (error) {
-    console.error('CORS Error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+export const config = {
+  matcher: ['/api/:path*'],
 }
