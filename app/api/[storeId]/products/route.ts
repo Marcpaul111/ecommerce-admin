@@ -140,7 +140,9 @@ export async function GET(
       },
     });
 
-    return NextResponse.json(products);
+    const response = NextResponse.json(products);
+    response.headers.set("Access-Control-Allow-Origin", "*");
+    return response;
   } catch (error) {
     console.error("[PRODUCTS_GET]", error);
     return new NextResponse("Internal Server Error", { status: 500 });
