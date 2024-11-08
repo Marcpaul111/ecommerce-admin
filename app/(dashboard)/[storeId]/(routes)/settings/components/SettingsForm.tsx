@@ -28,7 +28,7 @@ import { UseOrigin } from "@/hooks/use-origin";
 import ImageUpload from "@/components/ui/ImageUpload";
 
 interface SettingsFormProps {
-  initialData: Store & { images: StoreImage[]; mobileUrl: MobileImage[] };
+  initialData: Store & { images: StoreImage[]; mobileImages: MobileImage[];  };
 }
 
 const formSchema = z.object({
@@ -64,7 +64,7 @@ export default function SettingsForm({ initialData }: SettingsFormProps) {
       instagramUrl: initialData.instagramUrl || "",
       logoUrl: initialData.logoUrl || "",
       imageUrls: initialData.images.map((img) => img.url),
-      mobileImageUrls: initialData.mobileUrl ? initialData.mobileUrl.map((img) => img.mobileUrl) : []
+      mobileImageUrls: initialData.mobileImages ? initialData.mobileImages.map((img) => img.mobileUrl) : []
     },
   });
 
