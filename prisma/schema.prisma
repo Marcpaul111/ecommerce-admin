@@ -15,36 +15,47 @@ datasource db {
 }
 
 model Store {
-  id        String     @id @default(uuid())
-  name      String
-  userId    String   
-  logoUrl   String?    // New field
-  twitterUrl String?
-  facebookUrl String?
-  instagramUrl  String?
-  images    StoreImage[] // New relation
-  banners   Banners[]  @relation("StoreToBanner")
-  category  Category[] @relation("StoreToCategory")
-  sizes     Sizes[]    @relation("StoreToSize")
-  colors    Colors[]   @relation("StoreToColor")
-  products  Products[] @relation("StoreToProduct")
-  orders    Orders[]   @relation("StoreToOrder")
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id           String       @id @default(uuid())
+  name         String
+  userId       String
+  logoUrl      String? // New field
+  twitterUrl   String?
+  facebookUrl  String?
+  instagramUrl String?
+  images       StoreImage[]
+  mobileImages MobileImage[]
+  banners      Banners[]    @relation("StoreToBanner")
+  category     Category[]   @relation("StoreToCategory")
+  sizes        Sizes[]      @relation("StoreToSize")
+  colors       Colors[]     @relation("StoreToColor")
+  products     Products[]   @relation("StoreToProduct")
+  orders       Orders[]     @relation("StoreToOrder")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 }
 
 // New model for store images
 model StoreImage {
-  id        String   @id @default(uuid())
-  storeId   String
-  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  url       String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  storeId        String
+  store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  url            String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([storeId])
 }
 
+model MobileImage {
+  id        String   @id @default(uuid())
+  store     Store    @relation(fields: [storeId], references: [id])
+  storeId   String
+  mobileUrl String   // URL specific to mobile images
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+   @@index([storeId])
+}
 
 //creating store banners
 model Banners {
@@ -102,25 +113,25 @@ model Colors {
 }
 
 model Products {
-  id         String   @id @default(uuid())
-  storeId    String
-  store      Store    @relation("StoreToProduct", fields: [storeId], references: [id])
-  categoryId String
-  category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
-  name       String
-  description String  @default("")
-  price      Decimal
-  isNew         Boolean @default(false)
-  isFeatured Boolean  @default(false)
-  isArchived Boolean  @default(false)
-  sizeId     String
-  size       Sizes    @relation(fields: [sizeId], references: [id])
-  colorId    String
-  color      Colors   @relation(fields: [colorId], references: [id])
-  images     Image[]
+  id          String      @id @default(uuid())
+  storeId     String
+  store       Store       @relation("StoreToProduct", fields: [storeId], references: [id])
+  categoryId  String
+  category    Category    @relation("CategoryToProduct", fields: [categoryId], references: [id])
+  name        String
+  description String      @db.VarChar(800)
+  price       Decimal
+  isNew       Boolean     @default(false)
+  isFeatured  Boolean     @default(false)
+  isArchived  Boolean     @default(false)
+  sizeId      String
+  size        Sizes       @relation(fields: [sizeId], references: [id])
+  colorId     String
+  color       Colors      @relation(fields: [colorId], references: [id])
+  images      Image[]
   orderItems  OrderItem[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@index([storeId])
   @@index([categoryId])
@@ -139,30 +150,28 @@ model Image {
   @@index([productId])
 }
 
-model Orders{
-  id String @id @default(uuid())
-  storeId String
-  store Store @relation("StoreToOrder", fields: [storeId], references: [id])
+model Orders {
+  id        String      @id @default(uuid())
+  storeId   String
+  store     Store       @relation("StoreToOrder", fields: [storeId], references: [id])
   orderItem OrderItem[]
-  isPaid Boolean @default(false)
-  phone   String  @default("")
-  email   String   @default("")
-  address String    @default("")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isPaid    Boolean     @default(false)
+  phone     String      @default("")
+  email     String      @default("")
+  address   String      @default("")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-@@index([storeId])
+  @@index([storeId])
 }
 
-model OrderItem{
-   id String @id @default(uuid())
-   orderId  String
-   order Orders  @relation(fields: [orderId], references: [id])
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Orders   @relation(fields: [orderId], references: [id])
   productId String
-  product   Products  @relation(fields: [productId], references: [id])
+  product   Products @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
 }
-
-

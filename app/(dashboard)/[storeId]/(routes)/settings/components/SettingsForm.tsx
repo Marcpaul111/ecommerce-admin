@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Store, StoreImage } from "@prisma/client";
+import { MobileImage, Store, StoreImage } from "@prisma/client";
 import { Trash } from "lucide-react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,7 +28,7 @@ import { UseOrigin } from "@/hooks/use-origin";
 import ImageUpload from "@/components/ui/ImageUpload";
 
 interface SettingsFormProps {
-  initialData: Store & { images: StoreImage[] };
+  initialData: Store & { images: StoreImage[]; mobileUrl: MobileImage[] };
 }
 
 const formSchema = z.object({
@@ -38,6 +38,7 @@ const formSchema = z.object({
   instagramUrl: z.string().optional(),
   logoUrl: z.string().optional(),
   imageUrls: z.array(z.string()).optional(),
+  mobileImageUrls: z.array(z.string()).optional(),
 });
 
 type SettingsFormValues = z.infer<typeof formSchema>;
@@ -63,6 +64,7 @@ export default function SettingsForm({ initialData }: SettingsFormProps) {
       instagramUrl: initialData.instagramUrl || "",
       logoUrl: initialData.logoUrl || "",
       imageUrls: initialData.images.map((img) => img.url),
+      mobileImageUrls: initialData.mobileUrl ? initialData.mobileUrl.map((img) => img.mobileUrl) : []
     },
   });
 
@@ -167,7 +169,32 @@ export default function SettingsForm({ initialData }: SettingsFormProps) {
             name="imageUrls"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Banner Images</FormLabel>
+                <FormLabel>Billboard Images</FormLabel>
+                <FormControl>
+                  <ImageUpload
+                    value={field.value || []}
+                    disabled={loading}
+                    onChange={(urls) => field.onChange(urls)}
+                    onRemove={(url) =>
+                      field.onChange(
+                        (field.value || []).filter((current) => current !== url)
+                      )
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Separator />
+          {/* mobile banners */}
+          <FormField
+            control={form.control}
+            name="mobileImageUrls"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mobile Billboard Images</FormLabel>
                 <FormControl>
                   <ImageUpload
                     value={field.value || []}
