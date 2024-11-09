@@ -9,6 +9,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+interface CartItem {
+  id: string;
+  quantity: number;
+}
+
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
@@ -18,7 +23,8 @@ export async function POST(
   { params }: { params: { storeId: string } }
 ) {
   try {
-    const { items } = await req.json();
+    const body = await req.json();
+    const { items } = body as { items: CartItem[] };
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -30,7 +36,7 @@ export async function POST(
     const products = await prismadb.products.findMany({
       where: {
         id: {
-          in: items.map((item: any) => item.id)
+          in: items.map(item => item.id)
         },
       },
     });
@@ -38,7 +44,7 @@ export async function POST(
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
     products.forEach((product) => {
-      const cartItem = items.find((item: any) => item.id === product.id);
+      const cartItem = items.find(item => item.id === product.id);
       if (!cartItem) return;
 
       line_items.push({
@@ -48,7 +54,7 @@ export async function POST(
           product_data: {
             name: product.name,
           },
-          unit_amount: Math.round(product.price.toNumber() * 100),
+          unit_amount: Math.round(Number(product.price) * 100),
         },
       });
     });
@@ -58,12 +64,8 @@ export async function POST(
         storeId: params.storeId,
         isPaid: false,
         orderItem: {
-          create: items.map((item: any) => ({
-            product: {
-              connect: {
-                id: item.id
-              }
-            },
+          create: items.map(item => ({
+            productId: item.id,
             quantity: item.quantity
           }))
         }
