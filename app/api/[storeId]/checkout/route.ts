@@ -18,16 +18,19 @@ export async function POST(
   { params }: { params: { storeId: string } }
 ) {
   try {
-    const { productIds } = await req.json();
+    const { items } = await req.json();
 
-    if (!productIds || productIds.length === 0) {
-      return NextResponse.json({ error: "Product IDs are required" }, { status: 400, headers: corsHeaders });
+    if (!items || items.length === 0) {
+      return NextResponse.json(
+        { error: "Cart items are required" },
+        { status: 400, headers: corsHeaders }
+      );
     }
 
     const products = await prismadb.products.findMany({
       where: {
         id: {
-          in: productIds,
+          in: items.map((item: any) => item.id)
         },
       },
     });
@@ -35,8 +38,11 @@ export async function POST(
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
     products.forEach((product) => {
+      const cartItem = items.find((item: any) => item.id === product.id);
+      if (!cartItem) return;
+
       line_items.push({
-        quantity: 1,
+        quantity: cartItem.quantity,
         price_data: {
           currency: "PHP",
           product_data: {
@@ -52,12 +58,13 @@ export async function POST(
         storeId: params.storeId,
         isPaid: false,
         orderItem: {
-          create: productIds.map((productId: string) => ({
+          create: items.map((item: any) => ({
             product: {
               connect: {
-                id: productId
+                id: item.id
               }
-            }
+            },
+            quantity: item.quantity
           }))
         }
       }
@@ -80,6 +87,9 @@ export async function POST(
     return NextResponse.json({ url: session.url }, { headers: corsHeaders });
   } catch (error) {
     console.error('[CHECKOUT_ERROR]', error);
-    return NextResponse.json({ error: "Internal server error." }, { status: 500, headers: corsHeaders });
+    return NextResponse.json(
+      { error: "Internal server error." },
+      { status: 500, headers: corsHeaders }
+    );
   }
 }
