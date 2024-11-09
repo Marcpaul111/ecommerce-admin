@@ -39,6 +39,11 @@ export async function POST(
           in: items.map(item => item.id)
         },
       },
+      include: {
+        images: {
+          take: 1,
+        },
+      },
     });
 
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
@@ -53,6 +58,7 @@ export async function POST(
           currency: "PHP",
           product_data: {
             name: product.name,
+            images: product.images[0] ? [product.images[0].url] : [],
           },
           unit_amount: Math.round(Number(product.price) * 100),
         },
