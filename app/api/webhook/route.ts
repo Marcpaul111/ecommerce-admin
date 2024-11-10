@@ -3,6 +3,8 @@ import Stripe from "stripe";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
+import { resend } from "@/lib/resend";
+import ReceiptEmail from "@/emails/receipt-email";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -23,10 +25,9 @@ export async function POST(req: Request) {
 
   const session = event.data.object as Stripe.Checkout.Session;
   
-  console.log('Received session data:', JSON.stringify(session, null, 2));
-
   if (event.type === "checkout.session.completed") {
     const address = session?.customer_details?.address;
+    const email = session?.customer_details?.email;
 
     const addressComponents = [
       address?.line1,
@@ -38,8 +39,6 @@ export async function POST(req: Request) {
     ];
 
     const addressString = addressComponents.filter((c) => c !== null).join(", ");
-
-    console.log('Order ID from metadata:', session?.metadata?.orderId);
 
     try {
       // Fetch the payment intent to get receipt URL
@@ -60,8 +59,8 @@ export async function POST(req: Request) {
           isPaid: true,
           address: addressString,
           phone: session?.customer_details?.phone || '',
-          email: session?.customer_details?.email || '',
-          receiptUrl: receiptUrl || '', 
+          email: email || '',
+          receiptUrl: receiptUrl || '',
         },
         include: {
           orderItem: {
@@ -72,10 +71,32 @@ export async function POST(req: Request) {
         }
       });
 
-      console.log('Updated order:', JSON.stringify(updatedOrder, null, 2));
+      // Prepare products data for email
+      const products = updatedOrder.orderItem.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        price: Number(item.product.price),
+      }));
 
+      // Send receipt email
+      if (email) {
+        await resend.emails.send({
+          from: "Your Store <orders@yourdomain.com>",
+          to: email,
+          subject: `Order Confirmation #${updatedOrder.id}`,
+          react: ReceiptEmail({
+            email,
+            date: updatedOrder.createdAt,
+            orderNumber: updatedOrder.id,
+            products,
+            totalAmount: updatedOrder.totalPrice,
+            receiptUrl: receiptUrl || '',
+          }) as React.ReactElement,
+        });
+      }
+
+      // Archive products
       const productIds = updatedOrder.orderItem.map((item) => item.product.id);
-
       await prismadb.products.updateMany({
         where: {
           id: {
@@ -87,10 +108,9 @@ export async function POST(req: Request) {
         }
       });
 
-      console.log('Updated products:', productIds);
     } catch (error) {
-      console.error('Error updating database:', error);
-      return new NextResponse('Error updating database', { status: 500 });
+      console.error('Error processing order:', error);
+      return new NextResponse('Error processing order', { status: 500 });
     }
   }
 
