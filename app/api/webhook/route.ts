@@ -81,7 +81,7 @@ export async function POST(req: Request) {
       // Send receipt email
       if (email) {
         await resend.emails.send({
-          from: "Your Store <orders@yourdomain.com>",
+          from: "onboarding@resend.dev",
           to: email,
           subject: `Order Confirmation #${updatedOrder.id}`,
           react: ReceiptEmail({
