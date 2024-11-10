@@ -42,6 +42,16 @@ export async function POST(req: Request) {
     console.log('Order ID from metadata:', session?.metadata?.orderId);
 
     try {
+      // Fetch the payment intent to get receipt URL
+      const paymentIntent = await stripe.paymentIntents.retrieve(
+        session.payment_intent as string
+      );
+
+      // Get the receipt URL from the latest charge
+      const receiptUrl = paymentIntent.latest_charge 
+        ? (await stripe.charges.retrieve(paymentIntent.latest_charge as string)).receipt_url 
+        : null;
+
       const updatedOrder = await prismadb.orders.update({
         where: {
           id: session?.metadata?.orderId,
@@ -51,6 +61,7 @@ export async function POST(req: Request) {
           address: addressString,
           phone: session?.customer_details?.phone || '',
           email: session?.customer_details?.email || '',
+          receiptUrl: receiptUrl || '', 
         },
         include: {
           orderItem: {

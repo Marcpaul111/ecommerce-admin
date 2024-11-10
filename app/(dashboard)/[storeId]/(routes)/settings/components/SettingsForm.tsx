@@ -149,7 +149,7 @@ export default function SettingsForm({ initialData }: SettingsFormProps) {
               name="logoUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Logo</FormLabel>
+                  <FormLabel>Logo &nbsp; <small className="text-muted-foreground">(438 x 438)</small></FormLabel>
                   <FormControl>
                     <ImageUpload
                       value={field.value ? [field.value] : []}

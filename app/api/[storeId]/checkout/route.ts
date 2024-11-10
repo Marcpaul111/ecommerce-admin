@@ -47,10 +47,15 @@ export async function POST(
     });
 
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    let totalQuantity = 0;
+    let totalAmount = 0;
 
     products.forEach((product) => {
       const cartItem = items.find(item => item.id === product.id);
       if (!cartItem) return;
+
+      totalQuantity += cartItem.quantity;
+      totalAmount += Number(product.price) * cartItem.quantity;
 
       line_items.push({
         quantity: cartItem.quantity,
@@ -69,6 +74,8 @@ export async function POST(
       data: {
         storeId: params.storeId,
         isPaid: false,
+        totalQuantity,
+        totalPrice: Math.round(totalAmount),
         orderItem: {
           create: items.map(item => ({
             productId: item.id,
@@ -88,7 +95,9 @@ export async function POST(
       success_url: `${process.env.STORE_FRONT_URL}/cart?success=1`,
       cancel_url: `${process.env.STORE_FRONT_URL}/cart?canceled=1`,
       metadata: {
-        orderId: order.id
+        orderId: order.id,
+        totalQuantity: totalQuantity.toString(),
+        totalAmount: totalAmount.toString()
       }
     });
 
