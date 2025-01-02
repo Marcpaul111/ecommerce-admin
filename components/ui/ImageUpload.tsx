@@ -58,7 +58,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           try {
             const { imageUrl } = await uploadImage({
               file,
-              bucket: "ecommerce",
+              bucket: "test",
             });
             return {
               id: newImages[index].id,
